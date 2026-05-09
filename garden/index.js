@@ -1,11 +1,20 @@
 const express = require('express');
 
+
+
 /*
  * Init application with expressJS
  */
 const app = express();
 const port = 3000;
 const path = require('path');
+
+
+
+/*
+ * Load environment variables
+ */ 
+require('dotenv').config()
 
 /*
  * Init Database with SQLite3
@@ -14,12 +23,26 @@ const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('db.sql');
 
 /*
+ * Import auth0 middleware
+ */
+const { auth } = require("express-oauth2-jwt-bearer");
+const auth0Domain = process.env.VITE_AUTH0_DOMAIN;
+const auth0ID = process.env.VITE_AUTH0_CLIENT_ID;
+const checkJWT = auth({
+    audience: auth0ID,
+    issuerBaseURL: auth0Domain
+})
+
+
+/*
  * Serve static index.html file.
  * Located at HackDavis2026/garden/static/index.html
  */
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'static', 'index.html'));
 });
+
+
 
 /*
  * API Route Definitions
@@ -46,6 +69,16 @@ app.get('/api/zip/:zipcode', (req, res) => {
      */
     res.json(data);
 });
+
+// Return a chatbot response to a query from the frontend
+app.get('/api/ai', checkJWT, (req, res) => {
+    res.json({
+        message: "User verified success!",
+        user: req.auth.payload.sub
+    })
+})
+
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
