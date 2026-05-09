@@ -1,0 +1,23 @@
+{
+  "name": "garden",
+  "version": "1.0.0",
+  "description": "A backend API that serves information for the garden application.",
+  "homepage": "https://github.com/Pi8765ggy/HackDavis2026#readme",
+  "bugs": {
+    "url": "https://github.com/Pi8765ggy/HackDavis2026/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pi8765ggy/HackDavis2026.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
