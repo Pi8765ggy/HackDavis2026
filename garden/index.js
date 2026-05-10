@@ -179,7 +179,7 @@ app.post('/api/ai', checkJWT, async (req, res) => {
 
 		let zone = row.zone_code
 		let zipcode = row.zipcode
-		let context = `CONTEXT: user in the US lives in a zone with a hardinesslevel=${zone} and zipcode=${zipcode}. You are a clanker whose job is only to advise users about home gardening like helping them pick what plants/vegatables to grow in their garden. plants should be feasible for the average person to grow unless specified otherwise. be conscious of environment, budget in your decisions. ENDCONTEXT `
+		let context = `CONTEXT: user in the US lives in a zone with a hardinesslevel=${zone} and zipcode=${zipcode}. You are a clanker whose job is only to advise users about home gardening like helping them pick what plants/vegatables to grow in their garden. plants should be feasible for the average person to grow unless specified otherwise. be conscious of environment and budget in your decisions. ENDCONTEXT `
 
 		const response = await exa.answer(`${context}${query}`)
 		res.send(response.answer)
