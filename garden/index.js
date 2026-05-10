@@ -207,7 +207,7 @@ app.put('/api/users', checkJWT, ensureUser, (req, res) => {
  * Garden Routes
  */
 app.get('/api/plants', checkJWT, (req, res) => {
-	const stmt = db.prepare('SELECT name, date_planted FROM plants WHERE owner = ?');
+	const stmt = db.prepare('SELECT name, date_planted, id FROM plants WHERE owner = ?');
 	stmt.all(req.auth.payload.sub, (err, rows) => {
 		if (err) return res.status(400).json({ error: err.message });
 
@@ -224,10 +224,32 @@ app.post('/api/plants', checkJWT, ensureUser, (req, res) => {
 	const stmt = db.prepare('INSERT INTO plants (owner, name, date_planted) VALUES (?, ?, ?)');
 	stmt.run(owner, name, date_planted, function (err) {
 		if (err) return res.status(400).json({ error: err.message });
-        console.log("No error for database insert.")
 		return res.status(201).end()
   	});
   	stmt.finalize();
+})
+
+app.put('/api/plants/id/:id/name/:name/date/:date', checkJWT, ensureUser, (req, res) => {
+    const id = req.params.id;
+    const name = req.params.name;
+    const date = req.params.date;
+    const stmt = db.prepare('UPDATE plants SET name = ?, date_planted = ? WHERE id = ?');
+    stmt.run(name, date, id, function (err) {
+        if (err) return res.status(400).json({ error: err.message });
+        return res.status(204).end()
+    });
+    stmt.finalize();
+})
+
+app.delete('/api/plants/:id', checkJWT, ensureUser, (req, res) => {
+    const id = req.params.id
+    console.log("id: ", id)
+    const stmt = db.prepare('DELETE FROM plants WHERE id = ?')
+    stmt.run(id, function (err) {
+        if (err) return res.status(400).json({ error: err.message });
+        return res.status(204).end()
+    });
+    stmt.finalize();
 })
 
 /*
@@ -321,10 +343,11 @@ app.post('/api/ai/user', checkJWT, ensureUser, async (req, res) => {
  */
 app.get(/.*/, (req, res) => {
     console.log(path.join(__dirname, 'static', 'build', 'index.html'));
-    res.sendFile(path.join(__dirname, 'static', 'build', 'index.html'));
-});
-app.use((req, res) => {
-    res.sendFile(path.join(__dirname, 'static', 'build', 'index.html'));
+    if (req.method === 'GET') {
+        res.sendFile(path.join(__dirname, 'static', 'build', 'index.html'));
+    } else {
+        res.status(404).json({ error: "Not found." })
+    }
 });
 
 app.listen(port, () => {

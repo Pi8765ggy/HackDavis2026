@@ -27,14 +27,12 @@
 
   const logout = () => auth0Logout({ logoutParams: { returnTo: window.location.origin } })
 
-    const plantForm = ref(false)
-    const togglePlantForm = () => {
-        plantForm.value = !plantForm.value
-    }
+    const activeView = ref('default')
     
     const plant_name = ref("")
     // date var defaults to today
     const date_planted = ref(new Date().toISOString().split('T')[0])
+    const plant_id = ref(0)
     const addingPlant = ref(false)
     const addPlant = async () => {
         if (addingPlant.value) {
@@ -70,10 +68,75 @@
         } catch (err) {
             console.log(err)
         } finally {
-            console.log("Finished adding plant.")
             addingPlant.value = false
         }
 	}
+    
+    const removing = ref(false)
+    const removePlant = async () => {
+        if (removing.value) {
+            return
+        }
+        removing.value = true
+        try {
+            const token = await getAccessTokenSilently({
+                authorizationParams: {
+                    audience: 'garden-api'
+                }
+            });
+            console.log("Token created.")
+            const res = await fetch(`http://localhost:3000/api/plants/${plant_id.value}`, {
+			    method: "DELETE",
+			    headers: {
+				    "Content-Type": 'application/json',
+				    Authorization: `Bearer ${token}`
+		    	}
+		    });
+            if (!res.ok) {
+                console.log(res.error)
+                removing.value = false
+                return
+            }
+            await refreshPlants();
+        } catch (err) {
+            console.log(err)
+        } finally {
+            removing.value = false
+        }
+    }
+
+    const editing = ref(false)
+    const editPlant = async () => {
+        if (editing.value) {
+            return
+        }
+        editing.value = true;
+        try {
+            const token = await getAccessTokenSilently({
+                authorizationParams: {
+                    audience: 'garden-api'
+                }
+            });
+            console.log("Token created.")
+            const res = await fetch(`http://localhost:3000/api/plants/id/${plant_id.value}/name/${plant_name.value}/date/${date_planted.value}`, {
+			    method: "PUT",
+			    headers: {
+				    "Content-Type": 'application/json',
+				    Authorization: `Bearer ${token}`
+		    	}
+		    });
+            if (!res.ok) {
+                console.log(res.error)
+                editing.value = false
+                return
+            }
+            await refreshPlants();
+        } catch (err) {
+            console.log(err)
+        } finally {
+            editing.value = false
+        }
+    }
     
     const plantList = ref([])
     const refreshPlants = async () => {
@@ -126,18 +189,16 @@
         <section id="menu">
             <h1>Your Garden</h1>
 
-
-            <!-- toggle class='hidden' between 'btn' and 'addPlant' -->
-            <div id="btn" v-if="!plantForm">
-                <button @click="togglePlantForm">Add plant</button>
-                <button>Edit garden</button>
+            <div id="btn" v-if="activeView === 'default'">
+                <button @click="activeView = 'add'">Add plant</button>
+                <button @click="activeView = 'select'">Edit garden</button>
                 <button @click="routeChatBot">Ask our chatbot</button>
             </div>
-            
-            <div id="addPlant" v-else>
+
+            <div id="plantForm" v-else-if="activeView === 'add'">
                 <h2>Add a new plant</h2>
                 <form @submit.prevent="addPlant">
-                    <label for="pname">Plant name:</label>
+                    <label for="pname">Plant Name:</label>
                     <input v-model="plant_name" type="text" id="pname" required>
 
                     <label>Date Planted:</label>
@@ -145,15 +206,47 @@
 
                     <button type="submit">Add</button>
                 </form>
-                <button @click="togglePlantForm">Cancel</button>
+                <button @click="activeView = 'default'">Cancel</button>
+            </div>
+
+            <div id="plantForm" v-else-if="activeView === 'remove'">
+                <h2>Remove a plant</h2>
+                <form @submit.prevent="removePlant">
+                    <label for="pname">Plant ID:</label>
+                    <input v-model="plant_id" type="text" id="pid" required>
+                    <button type="submit">Remove</button>
+                </form>
+                <button @click="activeView = 'default'">Cancel</button>
+            </div>
+
+            <div id="plantForm" v-else-if="activeView === 'edit'">
+                <h2>Edit an existing plant</h2>
+                <form @submit.prevent="editPlant">
+                    <label for="pname">Plant ID:</label>
+                    <input v-model="plant_id" type="text" id="pid" required>
+
+                    <label for="pname">Plant Name:</label>
+                    <input v-model="plant_name" type="text" id="pname" required>
+
+                    <label>Date Planted:</label>
+                    <input v-model="date_planted" value="date_planted" type="date" id="date" required>
+
+                    <button type="submit">Edit</button>
+                </form>
+                <button @click="activeView = 'default'">Cancel</button>
+            </div>
+
+            <div id="plantForm" v-else-if="activeView === 'select'">
+                <button @click="activeView = 'edit'">Edit a Plant</button>
+                <button @click="activeView = 'remove'">Remove a Plant</button>
+                <button @click="activeView = 'default'">Cancel</button>
             </div>
         </section>
 
         <section id="list">
             <div v-for="plant in plantList">
                 <img src="../images/carrot.jpg" alt="carrot" :key="plant.id">
-                <p>{{ plant.name }}</p>
-                <p>{{ plant.date_planted }}</p>
+                <p>{{ plant.name }}, {{ plant.date_planted }}, id: {{ plant.id }}</p>
             </div>
             <!--
             <div class="plant">
@@ -238,7 +331,7 @@
         margin-top: 30px;
     }
 
-    #addPlant {
+    #plantForm {
         background-color: #FFFAC7;
         border-radius: 20px;
         margin: 10px;
@@ -246,15 +339,15 @@
         padding: 5px;
     }
 
-    #addPlant h2 {
+    #plantForm h2 {
         color: #403520;
         font-size: 24px;
     }
 
-    #addPlant button {
+    #plantForm button {
         background-color: #8BBF56;
     }
-    #addPlant form {
+    #plantForm form {
         background-color: #FFFAC7;
         border: none;
         width: 95%;
