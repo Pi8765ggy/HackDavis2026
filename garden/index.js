@@ -1,5 +1,6 @@
 const express = require('express');
 const { Exa } = require("exa-js");
+const aiRecommendPlants = require('./find_plants.js')
 
 /*
  * Init application with expressJS
@@ -170,22 +171,20 @@ app.post('/api/plants', checkJWT, (req, res) => {
  * links within the response are sent in markdown eg [google](google.com)
 */ 
 
-app.post('/api/ai', checkJWT, async (req, res) => {
-  	const stmt = db.prepare('SELECT zipcode, zone_code FROM users WHERE sub = ?');
-	const { query } = req.body
+app.get('/api/ai/plants/:zipcode', async (req, res) => {
+	const zipcode = req.params.zipcode
+	res.send(await aiRecommendPlants(exa, zipcode, getZone(zipcode).zone))
+})
+
+app.get('/api/ai/plants-auth', checkJWT, async (req, res) => {
+  	const stmt = db.prepare('SELECT zipcode FROM users WHERE sub = ?');
 
 	stmt.get(req.auth.payload.sub, async (err, row) => {
 		if (err) return res.status(400).json({ error: err.message });
-
-		let zone = row.zone_code
-		let zipcode = row.zipcode
-		let context = `CONTEXT: user in the US lives in a zone with a hardinesslevel=${zone} and zipcode=${zipcode}. You are a clanker whose job is only to advise users about home gardening like helping them pick what plants/vegatables to grow in their garden. plants should be feasible for the average person to grow unless specified otherwise. be conscious of environment and budget in your decisions. ENDCONTEXT `
-
-		const response = await exa.answer(`${context}${query}`)
-		res.send(response.answer)
+		const zipcode = row.zipcode
+		res.send(await aiRecommendPlants(exa, zipcode, getZone(zipcode).zone))
 	})
 })
-
 
 /*
  * Serve static index.html file.
