@@ -6,7 +6,6 @@
 
   const router = useRouter()
 
-  const userID = ref("default")
   const {
     isLoading,
     isAuthenticated,
@@ -34,15 +33,12 @@
     try{
         let token = null
         if (isAuthenticated.value && !isLoading.value) {
-            console.log("attempting token get")
             token = await getAccessTokenSilently({
                 authorizationParams: {
                     audience: 'garden-api'
                 }
             })
-            console.log("token got!")
         }
-
         const res = await fetch("http://localhost:3000/api/ai", {
             headers: {
                 Authorization: `Bearer ${token}`
@@ -50,13 +46,10 @@
         })
 
         if (!res.ok) {
-            userID.value = "Bad!"
-            throw new Error(token)
+            throw new Error("Response is bad from fetch.")
         }
 
         const data = await res.json()
-
-        userID.value = data.user
     } catch (err) {
         console.error("Error catch executed.")
         console.error("Erorr: ", err)
