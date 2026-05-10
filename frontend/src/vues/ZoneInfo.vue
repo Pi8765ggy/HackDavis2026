@@ -1,4 +1,4 @@
-<script>
+<script setup>
     import { useAuth0 } from '@auth0/auth0-vue'
     import { ref, onMounted } from 'vue'
     import { useRouter } from 'vue-router'
@@ -6,8 +6,6 @@
     const router = useRouter()
 
     const {
-        isLoading,
-        isAuthenticated,
         getAccessTokenSilently,
         error,
         loginWithRedirect,
@@ -17,6 +15,10 @@
 
     const showResult = ref(false)
     const inputZip = ref("")
+    const plantList = ref([])
+    const zone = ref("")
+
+    const loading = ref(false)
 
     const ResetZip = () => {
         showResult.value = false
@@ -24,10 +26,68 @@
     }
 
     const GardenView = () => {
+        console.log("gardern")
     }
 
     const onSubmit = async () => {
-        
+
+        if (loading.value) {
+            return
+        }
+
+        try {
+            loading.value = true
+            const token = await getAccessTokenSilently({
+                authorizationParams: {
+                    audience: 'garden-api'
+                }
+            });
+            console.log("Created token")
+
+            const inZip = inputZip.value
+
+            console.log("Start AI Resp fetch")
+            console.log(inZip)
+            let res = await fetch(`http://localhost:3000/api/ai/plants/${encodeURIComponent(inZip)}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": 'application/json',
+                    Authorization: `Bearer ${token}`
+                }
+            })
+            if (!res.ok) {
+                throw new Error("Response error")
+            }
+            let data = await res.json()
+            console.log(data)
+
+            plantList.value = data
+            
+            console.log("Start zone fetch")
+            res = await fetch(`http://localhost:3000/api/zip/${encodeURIComponent(inZip)}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": 'application/json',
+                    Authorization: `Bearer ${token}`
+                }
+            })
+            if (!res.ok) {
+                throw new Error("Reponse error")
+            }
+            data = await res.json()
+            console.log(data)
+
+            zone.value = data.zone
+            console.log(zone.value)
+
+            showResult.value = true
+
+        } catch (err) {
+            console.error("Error catch executed.")
+            console.error(err)
+        } finally {
+            loading.value = false
+        }
     }
 </script>
 
@@ -45,7 +105,7 @@
         <form @submit.prevent="onSubmit">
             <h2>Enter your ZIP Code</h2>
 
-            <input v-model="inputZip" type="text" id="zip" name="zip">
+            <input v-model.number="inputZip" type="text" id="zip" name="zip" required>
 
             <input type="submit" value="START" id="submit">
         </form>
@@ -94,7 +154,7 @@
     <div id="resultView" v-else> 
         <section id="zone">
             <p>Your Zone is:</p>
-            <h2>Davis Zone</h2>
+            <h2> {{ zone }} </h2>
 
             <button id="reset" @click="ResetZip">Enter another location</button>
 
@@ -104,6 +164,15 @@
 
         <section id="showPlants">
             <h3>Here are some plants we recommend for your location</h3>
+            <article v-for="plant in plantList">
+                 <img v-if="plant.imagetype === 'flower'" src="../images/flowerplaceholder.jpg" alt="flower">
+                 <img v-else src="../images/carrot.jpg" alt="vegetable">
+                <div>
+                    <h2>{{ plant.name }}</h2>
+                    <p>{{ plant.description }}</p>
+                </div>
+            </article>
+            <!--
             <article>
                 <img src="../images/flower1.jpg" alt="flower">
                 <div>
@@ -119,6 +188,7 @@
                     <p>Despcription for the plant goes here</p>
                 </div>   
             </article>
+            -->
         </section>
         <!-- <button id="reset" @click="switchView">Click Me</button> -->
     </div>
