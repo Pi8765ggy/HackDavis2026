@@ -1,14 +1,33 @@
 <script>
-    import {ref} from 'vue'
+    import { useAuth0 } from '@auth0/auth0-vue'
+    import { ref, onMounted } from 'vue'
+    import { useRouter } from 'vue-router'
 
-    const showResult =  ref(false)
+    const router = useRouter()
 
-    function switchView() {
+    const {
+        isLoading,
+        isAuthenticated,
+        getAccessTokenSilently,
+        error,
+        loginWithRedirect,
+        logout: auth0Logout,
+        user
+    } = useAuth0()
+
+    const showResult = ref(false)
+    const inputZip = ref("")
+
+    const ResetZip = () => {
         showResult.value = false
+        inputZip.value = ""
     }
 
-    function onSubmit() {
-        showResult.value = true
+    const GardenView = () => {
+    }
+
+    const onSubmit = async () => {
+        
     }
 </script>
 
@@ -20,13 +39,13 @@
 
     <!-- toggle the class "invis" switch display -->
     <!-- <div id="intialPage" class="invis"> -->
-    <div id="intialPage">
+    <div id="intialPage" v-if="!showResult">
         <h1>Find the perfect plants for your garden</h1>
         
         <form @submit.prevent="onSubmit">
             <h2>Enter your ZIP Code</h2>
 
-            <input type="text" id="zip" name="zip">
+            <input v-model="inputZip" type="text" id="zip" name="zip">
 
             <input type="submit" value="START" id="submit">
         </form>
@@ -72,15 +91,15 @@
     </div>
 
     <!-- toggle class "hidden" to switch display-->
-    <div id="resultView" class="hidden"> 
+    <div id="resultView" v-else> 
         <section id="zone">
             <p>Your Zone is:</p>
             <h2>Davis Zone</h2>
 
-            <button id="reset">Enter another location</button>
+            <button id="reset" @click="ResetZip">Enter another location</button>
 
             <!-- if logged in, remove the words "Log-in to" -->
-            <button id="garden">Log-in to manage your garden</button>
+            <button id="garden" @click="GardenView">Log-in to manage your garden</button>
         </section>
 
         <section id="showPlants">

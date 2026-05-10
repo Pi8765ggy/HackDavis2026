@@ -107,20 +107,12 @@ app.get('/api/zip/:zipcode', (req, res) => {
 /*
  * User Routes
  */
+// Creates a user, defaults location to Davis CA
 app.post('/api/user', checkJWT, (req, res) => {
-
-    console.log(req.body)
-    if (!req.body) {
-        return res.status(400).json({ error: "Empty request body." })
-    }
-
     const sub = req.auth.payload.sub;
   	const zipcode = '95616' // Davis, CA. Default
 
     const data = getZone(zipcode);
-    if (!data) {
-        return res.status(404).json({ error: "Zip code not found." })
-    }
     const zone_code = data["zone"]
 
   	const stmt = db.prepare('INSERT INTO users (sub, zipcode, zone_code) VALUES (?, ?, ?)');
@@ -135,10 +127,17 @@ app.post('/api/user', checkJWT, (req, res) => {
 	stmt.finalize();
 });
 
-// also updates zone code (based on zipcode)
+// Updates zipcode and zone code for user based on input
 app.put('/api/users', checkJWT, (req, res) => {
+    if (!req.body) {
+        return res.status(400).json({ error: "Empty request body. "});
+    }
 	const { zipcode } = req.body;
 	const zone = getZone(zipcode).zone;
+
+    if (!zone) {
+        return res.status(404).json({ error: "Invalid zipcode provided. "})
+    }
 
 	const stmt = db.prepare('UPDATE users SET zipcode = ?, zone_code = ? WHERE sub = ?');
 
@@ -146,7 +145,7 @@ app.put('/api/users', checkJWT, (req, res) => {
 		if (err) return res.status(400).json({ error: err.message });
 		if (this.changes === 0) return res.status(404).json({ error: 'User not found' });
 
-		res.json({ message: 'Zipcode updated' });
+		return res.status(200).json({ message: 'Zipcode updated' });
 	});
 
 	stmt.finalize();
@@ -189,7 +188,7 @@ app.post('/api/plants', checkJWT, (req, res) => {
 */ 
 app.get('/api/ai/plants/:zipcode', async (req, res) => {
 	const zipcode = req.params.zipcode
-	res.send(await aiRecommendPlants(exa, zipcode, getZone(zipcode).zone))
+	return res.status(200).send(await aiRecommendPlants(exa, zipcode, getZone(zipcode).zone))
 })
 
 app.get('/api/ai/plants-auth', checkJWT, async (req, res) => {
@@ -197,8 +196,9 @@ app.get('/api/ai/plants-auth', checkJWT, async (req, res) => {
 
 	stmt.get(req.auth.payload.sub, async (err, row) => {
 		if (err) return res.status(400).json({ error: err.message });
-		const zipcode = row.zipcode
-		res.send(await aiRecommendPlants(exa, zipcode, getZone(zipcode).zone))
+		const zipcode = row.zipcode;
+        const zone = row.zone_code;
+		return res.status(200).send(await aiRecommendPlants(exa, zipcode, zone));
 	})
 })
 
