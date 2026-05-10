@@ -1,21 +1,23 @@
 async function aiRecommendPlants(exa, zipcode, zone) {
-	let context = `CONTEXT: user in the US lives in a zone with a hardinesslevel=${zone} and zipcode=${zipcode}. You are a clanker whose job is only to advise users about home gardening like helping them pick what plants/vegatables to grow in their garden. plants should be feasible for the average person to grow unless specified otherwise. be conscious of environment and budget in your decisions. ENDCONTEXT `
+	const date = new Date().toISOString().split('T')[0];
+	let context = `CONTEXT: User in the US lives in a zone with a hardinesslevel=${zone} and zipcode=${zipcode}. Today is ${date} You are a helpful AI model who's job is only to advise users about home gardening like helping them pick what plants/vegatables to grow in their garden. plants should be feasible for the average person to grow unless specified otherwise. be conscious of environment and budget in your decisions. Only reccomend plants that the average person would have heard of, like basic vegetables or flowers. The plant must be native to the area in your response. You should aim to provide one vegetable and one flower in your response. ENDCONTEXT `
 
-	const response = await exa.search(`give me 3-4 plants i can grow in my garden right now. plants should have name, description, imageurl. description is no longer than a sentence. image url should be accessible or null.`, {
-		numResults: 1,
+
+    const response = await exa.search(`Give me two plants i can grow in my garden right now. Plants should have name, description, imagetype. Description is no longer than a sentence. Image type should be \'flower\' or \'vegetable\'.`, {
+		numResults: 2,
 		systemPrompt: context, 
 		outputSchema: {
 		  "properties": {
 			"plants": {
-			  "description": "A list of 3 to 4 recommended garden plants.",
+			  "description": "A list of 2 recommended garden plants.",
 			  "items": {
 				"properties": {
 				  "description": {
 					"description": "A brief description of the plant, strictly limited to a single sentence.",
 					"type": "string"
 				  },
-				  "imageurl": {
-					"description": "A valid, publicly accessible HTTPS URL leading directly to an image of the plant. null if youre unsure it works.",
+				  "imagetype": {
+					"description": "Either a flower or a vegetable.",
 					"type": "string"
 				  },
 				  "name": {
