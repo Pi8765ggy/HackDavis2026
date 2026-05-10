@@ -119,25 +119,19 @@ app.post('/api/user', checkJWT, (req, res) => {
 });
 
 // also updates zone code (based on zipcode)
-app.put('/api/user/update', checkJWT, (req, res) => {
-    if (!req.body) {
-        return res.status(400).json({ error: "Empty request body. "})
-    }
+app.put('/api/users', checkJWT, (req, res) => {
 	const { zipcode } = req.body;
-	const data = getZone(zipcode);
-
-    if (!data) {
-        return res.status(404).json({ error: "Zip code not found." })
-    }
-    const zone_code = data["zone"]
+	const zone = getZone(zipcode).zone;
 
 	const stmt = db.prepare('UPDATE users SET zipcode = ?, zone_code = ? WHERE sub = ?');
 
-	stmt.run(zipcode, zone_code, req.auth.payload.sub, (err) => {
+	stmt.run(zipcode, zone, req.auth.payload.sub, function (err) {
 		if (err) return res.status(400).json({ error: err.message });
 		if (this.changes === 0) return res.status(404).json({ error: 'User not found' });
-		return res.status(200).json({ message: 'Zipcode updated' });
+
+		res.json({ message: 'Zipcode updated' });
 	});
+
 	stmt.finalize();
 });
 
@@ -147,35 +141,27 @@ app.put('/api/user/update', checkJWT, (req, res) => {
  * Garden Routes
  */
 app.get('/api/plants', checkJWT, (req, res) => {
-    owner = req.auth.payload.sub
 	const stmt = db.prepare('SELECT name, date_planted FROM plants WHERE owner = ?');
-	stmt.all(owner, (err, rows) => {
+	stmt.all(req.auth.payload.sub, (err, rows) => {
 		if (err) return res.status(400).json({ error: err.message });
 
 		const json = JSON.stringify(rows);
-  		return res.status(200).send(json)
+  		res.send(json)
 	});
 	stmt.finalize();
 })
 
 app.post('/api/plants', checkJWT, (req, res) => {
-    
-    if (!req.body) {
-        return res.status(400).json({ error: "Empty request body. "})
-    }
-
-    owner = req.auth.payload.sub
-
 	const { name, date_planted } = req.body;
+
 	const stmt = db.prepare('INSERT INTO plants (owner, name, date_planted) VALUES (?, ?, ?)');
 
 	stmt.run(owner, name, date_planted, function (err) {
-		if (err) {
-            return res.status(400).json({ error: err.message })
-        } else {
-            return res.status(201).json({ message: "Created plant success."})
-        }
+		if (err) return res.status(400).json({ error: err.message });
+
+		res.status(201)
   	});
+
   	stmt.finalize();
 })
 
@@ -193,7 +179,7 @@ app.post('/api/ai', checkJWT, async (req, res) => {
 
 		let zone = row.zone_code
 		let zipcode = row.zipcode
-		let context = `Context: user in the US lives in a zone with a hardinesslevel=${zone} and zipcode=${zipcode}.`
+		let context = `CONTEXT: user in the US lives in a zone with a hardinesslevel=${zone} and zipcode=${zipcode}. You are a clanker whose job is only to advise users about home gardening like helping them pick what plants/vegatables to grow in their garden. plants should be feasible for the average person to grow unless specified otherwise. be conscious of environment, budget in your decisions. ENDCONTEXT `
 
 		const response = await exa.answer(`${context}${query}`)
 		res.send(response.answer)
