@@ -172,12 +172,12 @@ app.post('/api/plants', checkJWT, (req, res) => {
 app.get('/api/ai/:query', checkJWT, async (req, res) => {
   	const stmt = db.prepare('SELECT zipcode, zone_code FROM users WHERE sub = ?');
 
-	stmt.get(req.user.email, (err, row) => {
+	stmt.get(req.user.email, async (err, row) => {
 		if (err) return res.status(400).json({ error: err.message });
 
 		let zone = row.zone_code
 		let zipcode = row.zipcode
-		let context = `Context: user in the US lives in a zone with a hardinesslevel=${} and zipcode=${zipcode}.`
+		let context = `Context: user in the US lives in a zone with a hardinesslevel=${zone} and zipcode=${zipcode}.`
 
 		const response = await exa.answer(`${context}${req.params.query}`);
 		console.log(response)
