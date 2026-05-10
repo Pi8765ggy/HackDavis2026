@@ -113,6 +113,7 @@ app.get('/api/zip/:zipcode', (req, res) => {
     const zipcode = req.params.zipcode;
     
     const data = getZone(zipcode)
+    const extraData = getCityState(zipcode)
 
     if (!data) {
         throw {
@@ -121,7 +122,7 @@ app.get('/api/zip/:zipcode', (req, res) => {
         }
     };
 
-    res.json(data);
+    res.json({...data, ...extraData});
 });
 
 
