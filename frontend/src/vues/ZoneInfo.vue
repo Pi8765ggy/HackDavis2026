@@ -26,7 +26,7 @@
     }
 
     const GardenView = () => {
-        console.log("gardern")
+        router.push('/garden');
     }
 
     const onSubmit = async () => {
@@ -162,7 +162,8 @@
             <button id="reset" @click="ResetZip">Enter another location</button>
 
             <!-- if logged in, remove the words "Log-in to" -->
-            <button id="garden" @click="GardenView">Log-in to manage your garden</button>
+            <button v-if="!isAuthenticated" id="garden" @click="GardenView">Log-in to Manage your Garden</button>
+            <button v-else id="garden" @click="GardenView">Manage your Garden</button>
         </section>
 
         <section id="showPlants">
@@ -267,6 +268,10 @@
 
     #showPlants h3 {
         font-weight: 400;
+    }
+
+    #showPlants p {
+        font-size: 20pt;
     }
 
     article {

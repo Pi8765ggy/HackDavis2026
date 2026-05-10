@@ -1,4 +1,5 @@
 import { createWebHistory, createRouter } from 'vue-router'
+import { authGuard } from '@auth0/auth0-vue'
 
 import LoginView from './vues/Login.vue'
 import GardenView from './vues/Garden.vue'
@@ -9,9 +10,9 @@ import chat from './vues/chat.vue'
 const routes = [
   { path: '/', component: ZoneView },
   { path: '/login', component: LoginView },
-  { path: '/garden', component: GardenView },
+  { path: '/garden', component: GardenView, beforeEnter: authGuard },
   { path: '/dev', component: dev },
-  { path: '/chat', component: chat}
+  { path: '/chat', component: chat, beforeEnter: authGuard }
 ]
 
 const router = createRouter({

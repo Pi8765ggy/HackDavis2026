@@ -146,13 +146,17 @@
 
 	// returns {zipcode, zone_code, city, state}
 	async function getMyProfile() {
-		const res = await fetch("http://localhost:3000/api/me", {
-			headers: {
-				"Content-Type": 'application/json',
-				Authorization: `Bearer ${await token()}`
-			}
-		})
-		return await res.json()
+        try {
+		    const res = await fetch("http://localhost:3000/api/me", {
+			    headers: {
+				    "Content-Type": 'application/json',
+				    Authorization: `Bearer ${await token()}`
+			    }
+		    })
+		    return await res.json()
+        } catch (err) {
+            console.log(err)
+        }
 	}
 
 	// zipcode: string. leftpads zipcodes with 0s

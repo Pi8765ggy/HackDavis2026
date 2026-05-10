@@ -135,32 +135,50 @@ app.get('/api/me', checkJWT, (req, res) => {
 		if (err) {
 			return res.status(400).json({ error: err.messaage });
 		}
-		return res.send({...row, ...getCityState(row.zipcode)})
+		return res.status(200).send({...row, ...getCityState(row.zipcode)})
 	})
 })
 
+
+// Middleware func to ensure user for specific endpoints.
+const ensureUser = async (req, res, next) => {
+    try {
+        await verifyUser(req.auth.payload.sub);
+        next();
+    } catch (err) {
+        next(err);
+    }
+};
+
+// Helper func for useful user verification purpose
+const verifyUser = async (sub) => {
+    const defaultZip = '95616' // Davis CA
+    const defaultZone = getZone(defaultZip)
+    
+    return new Promise((resolve, reject) => {
+        db.run(
+            'INSERT OR IGNORE INTO users (sub, zipcode, zone_code) VALUES (?, ?, ?)',
+            [sub, defaultZip, defaultZone],
+            (err) => err ? reject(err) : resolve()
+        );
+    });
+}
+
+
 // Creates a user, defaults location to Davis CA
-app.post('/api/user', checkJWT, (req, res) => {
+app.post('/api/user', checkJWT, async (req, res) => {
     const sub = req.auth.payload.sub;
-  	const zipcode = '95616' // Davis, CA. Default
-
-    const data = getZone(zipcode);
-    const zone_code = data["zone"]
-
-  	const stmt = db.prepare('INSERT INTO users (sub, zipcode, zone_code) VALUES (?, ?, ?)');
-
-	stmt.run(sub, zipcode, zone_code, (err) => {
-		if (err) {
-            return res.status(400).json({ error: err.messaage });
-        } else {
-            return res.status(201).json({ message: "Created User" })
-        }
-	});
-	stmt.finalize();
+    try {
+        await verifyUser(sub);
+        res.status(201).json("User ensured.")
+    } catch (err) {
+        console.error('Err at POST /api/user: ', err)
+        res.status(500).json({error: err.messaage})
+    }
 });
 
 // Updates zipcode and zone code for user based on input
-app.put('/api/users', checkJWT, (req, res) => {
+app.put('/api/users', checkJWT, ensureUser, (req, res) => {
     if (!req.body) {
         return res.status(400).json({ error: "Empty request body. "});
     }
@@ -194,23 +212,21 @@ app.get('/api/plants', checkJWT, (req, res) => {
 		if (err) return res.status(400).json({ error: err.message });
 
 		const json = JSON.stringify(rows);
-  		res.send(json)
+  		return res.status(200).send(json)
 	});
 	stmt.finalize();
 })
 
-app.post('/api/plants', checkJWT, (req, res) => {
+app.post('/api/plants', checkJWT, ensureUser, (req, res) => {
 	const { name, date_planted } = req.body;
     const owner = req.auth.payload.sub
 
 	const stmt = db.prepare('INSERT INTO plants (owner, name, date_planted) VALUES (?, ?, ?)');
-
 	stmt.run(owner, name, date_planted, function (err) {
 		if (err) return res.status(400).json({ error: err.message });
-
-		res.status(201)
+        console.log("No error for database insert.")
+		return res.status(201).end()
   	});
-
   	stmt.finalize();
 })
 
@@ -238,12 +254,11 @@ app.get('/api/ai/plants-auth', checkJWT, async (req, res) => {
  * Returns a chatbot's response to a user submitted prompt.
  * The context is provided using the database.
  */
-app.post('/api/ai/user', checkJWT, async (req, res) => {
+app.post('/api/ai/user', checkJWT, ensureUser, async (req, res) => {
 
     const { prompt } = req.body
 
     try {
-
         const rows = await dbAll(
             'SELECT name, date_planted FROM plants WHERE owner = ?',
             [req.auth.payload.sub]
@@ -260,10 +275,18 @@ app.post('/api/ai/user', checkJWT, async (req, res) => {
             .join('\n');
             plants = `The user has ${rows.length} plant${rows.length === 1 ? '' : 's'}:\n${plantList}`;
         }
-        const user = await dbGet(
-            'SELECT * FROM users WHERE sub = ?',
-            [req.auth.payload.sub]
-        );
+        let user;
+        try {
+            user = await dbGet(
+                'SELECT * FROM users WHERE sub = ?',
+                [req.auth.payload.sub]
+            );
+        } catch (err) {
+            console.error('Error in dbGet', err)
+            return res.status(400).json({ error:err.message })
+        }
+
+        console.log("User: ", user)
 
         const context = `You are a helpful AI model who wants to provide users with information regarding gardening. \
         You will be polite and concise with your answers, striving to provide the most accurate information. \
@@ -271,7 +294,7 @@ app.post('/api/ai/user', checkJWT, async (req, res) => {
         Avoid citing sources directly in text, a citation list will be provided from your response elsewhere. \
         Try to talk in plain English, without using overly technical terms. \
         You will absolutely never provide any inforation that you deem to be dangerous or risky for the user. \
-        The user lives in the zone ${user.zone}. You should base your response around the zone of the user. \
+        The user lives in the zone ${user.zone_code}. You should base your response around the zone of the user. \
         The current date is ${date}. You should base your response around the current time of the year. \
         ${plants} \n\
         The user has submitted the following prompt, answer to the best of your ability. \n\
@@ -287,7 +310,8 @@ app.post('/api/ai/user', checkJWT, async (req, res) => {
         });
 
     } catch (err) {
-        return res.status(500).json({ message: err.message })
+        console.error('Error in POST /api/ai/user', err)
+        return res.status(500).json({ error: err.message })
     }
 })
 
