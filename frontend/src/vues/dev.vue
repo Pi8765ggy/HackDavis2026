@@ -172,8 +172,6 @@
 
 	// returns string in format YYYY-MM-DD for sqlite
 
-	}
-
 	async function createPlantInGarden(plant_name) {
 		const res = await fetch("http://localhost:3000/api/plants", {
 			method: "POST",
