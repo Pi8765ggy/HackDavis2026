@@ -1,4 +1,4 @@
-<script>
+<script setup>
     import { useAuth0 } from '@auth0/auth0-vue'
     import { ref, onMounted } from 'vue'
     import { useRouter } from 'vue-router'

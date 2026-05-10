@@ -106,36 +106,6 @@
         }
     }
 
-    const chatbot = async () => {
-        try {
-            const token = await getAccessTokenSilently({
-                authorizationParams: {
-                    audience: 'garden-api'
-                }
-            })
-            console.log("Created token")
-            const res = await fetch("http://localhost:3000/api/ai/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    query: "What plants should i grow to eat?"
-                })
-            })
-            if (!res.ok) {
-                throw new Error("Reponse error")
-            }
-            const data = await res.text()
-            console.log(data)
-
-        } catch (err) {
-            console.error("Error catch executed.")
-            console.error(err)
-        }
-    }
-
     const promptExa = async () => {
         try {
             const token = await getAccessTokenSilently({
@@ -165,6 +135,74 @@
         }
     }
 
+
+	async function token() {
+		return await getAccessTokenSilently({
+			authorizationParams: {
+				audience: 'garden-api'
+			}
+		})
+	}
+
+	// returns {zipcode, zone_code, city, state}
+	async function getMyProfile() {
+		const res = await fetch("http://localhost:3000/api/me", {
+			headers: {
+				"Content-Type": 'application/json',
+				Authorization: `Bearer ${await token()}`
+			}
+		})
+		return await res.json()
+	}
+
+	// zipcode: string. leftpads zipcodes with 0s
+	async function updateMyZipcode(zipcode) {
+		const res = await fetch("http://localhost:3000/api/users", {
+			method: "PUT",
+			headers: {
+				"Content-Type": 'application/json',
+				Authorization: `Bearer ${await token()}`
+			},
+			body: JSON.stringify({
+				zipcode: zipcode.toString().padStart(5, '0')
+			})
+		})
+		const response = await res.json()
+	}
+
+	// returns string in format YYYY-MM-DD for sqlite
+
+	}
+
+	async function createPlantInGarden(plant_name) {
+		const res = await fetch("http://localhost:3000/api/plants", {
+			method: "POST",
+			headers: {
+				"Content-Type": 'application/json',
+				Authorization: `Bearer ${await token()}`
+			},
+			body: JSON.stringify({
+				name: plant_name,
+				date_planted: today()
+			})
+		})
+		const response = await res.json()
+	}
+
+	function today() {
+		return new Date().toISOString().split('T')[0];
+	}
+
+	async function getMyPlantsInGarden(plant_name) {
+		const res = await fetch("http://localhost:3000/api/plants", {
+			headers: {
+				"Content-Type": 'application/json',
+				Authorization: `Bearer ${await token()}`
+			}
+		})
+		const response = await res.json()
+	}
+
     onMounted(async () => {
     })
 
@@ -186,9 +224,9 @@
         <p>You are logged in.</p>
         <button @click="logout">Logout</button>
         <button @click="createUser">Create User</button>
-        <button @click="createPlant">Create Plant</button>
+        <button @click="createPlantInGarden('carrot')">Create Plant</button>
         <button @click="getPlant">Get Plants</button>
-        <button @click="chatbot">chatbot (click create user first)</button>
+        <button @click="">chatbot (click create user first)</button>
         <button @click="promptExa">Prompt</button>
     </div>
 
