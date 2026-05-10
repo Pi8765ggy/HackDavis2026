@@ -35,3 +35,27 @@ header {
     height: auto;
 }
 
+#user {
+    display: flex;
+    margin-top: 20px;
+    position: relative;
+    align-items: center;
+    gap: 20px;
+}
+
+#user img {
+    height: 80px;
+    width: auto;
+}
+
+header button {
+    font-size: 18px;
+    padding: 10px 15px;
+    font-family: "Fira Sans", sans-serif;
+    background-color: #FFF9E3;
+    color: #58554A;
+    border: none;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
