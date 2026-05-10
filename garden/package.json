@@ -15,8 +15,8 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "db:reset": "rm db.sql && sqlite3 db.sql < schema.sql"
+    "db:reset": "rm db.sql && sqlite3 db.sql < schema.sql",
+    "start": "bash start.sh"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
