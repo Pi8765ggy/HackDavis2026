@@ -97,10 +97,13 @@
         <img src="../images/user-icon.svg" alt="user icon" id="user">
     </header>
 
+	<img src="../images/pinkflower.png" class="loading-spinner" v-if="loading"/>
+
     <!-- toggle the class "invis" switch display -->
     <!-- <div id="intialPage" class="invis"> -->
     <div id="intialPage" v-if="!showResult">
         <h1>Find the perfect plants for your garden</h1>
+
         
         <form @submit.prevent="onSubmit">
             <h2>Enter your ZIP Code</h2>
@@ -360,4 +363,23 @@
             margin: auto;
         }
     }
+
+	.loading-spinner {
+		width: 20vw;
+		position: fixed;
+		margin: -10vw;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		animation: spin 4s linear infinite;
+	}
+
+	@keyframes spin {
+	  from {
+		transform: rotate(0deg);
+	  }
+	  to {
+		transform: rotate(360deg);
+	  }
+	}
 </style>
