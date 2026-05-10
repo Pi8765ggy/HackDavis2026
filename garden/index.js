@@ -44,9 +44,27 @@ const checkJWT = auth({
 
 // Return zone information based on a provided zipcode
 const zone = require(path.join(__dirname, 'static', 'zoneinfo', 'zipcode_zone.json'));
+function getZone(zipcode) {
+    const data = zone[zipcode];
+    if (!data) {
+        return null
+    } else {
+    /* 
+     * Returns data related to the specific zip code in this format:
+     *
+     * zone: A string that gives the hardiness zone of the zipcode. (ex: "7a")
+     * trange: A string that give the temperature range of the zone in degrees F. (ex: "0 to 5")
+     * zonetitle: String that combines the previous two fields. (ex: "7a: 0 to 5")
+     *
+     */
+        return data
+    }
+}
+
 app.get('/api/zip/:zipcode', (req, res) => {
     const zipcode = req.params.zipcode;
-    const data = zone[zipcode];
+    
+    const data = getZone(zipcode)
 
     if (!data) {
         return res.status(404).json({
@@ -55,12 +73,6 @@ app.get('/api/zip/:zipcode', (req, res) => {
         })
     };
     
-    // Returns data related to the specific zip code in this format:
-    /*
-     * zone: A string that gives the hardiness zone of the zipcode. (ex: "7a")
-     * trange: A string that give the temperature range of the zone in degrees F. (ex: "0 to 5")
-     * zonetitle: String that combines the previous two fields. (ex: "7a: 0 to 5")
-     */
     res.json(data);
 });
 
@@ -71,9 +83,18 @@ app.get('/api/zip/:zipcode', (req, res) => {
 app.post('/api/user', checkJWT, (req, res) => {
 
     console.log(req.body)
+    if (!req.body) {
+        return res.status(400).json({ error: "Empty request body." })
+    }
 
-    const sub = req.auth.payload.sub
-  	const {zipcode, zone_code} = req.body;
+    const sub = req.auth.payload.sub;
+  	const {zipcode} = req.body;
+
+    const data = getZone(zipcode);
+    if (!data) {
+        return res.status(404).json({ error: "Zip code not found." })
+    }
+    const zone_code = data["zone"]
 
   	const stmt = db.prepare('INSERT INTO users (sub, zipcode, zone_code) VALUES (?, ?, ?)');
 
