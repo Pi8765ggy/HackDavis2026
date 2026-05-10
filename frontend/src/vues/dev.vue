@@ -136,6 +136,35 @@
         }
     }
 
+    const promptExa = async () => {
+        try {
+            const token = await getAccessTokenSilently({
+                authorizationParams: {
+                    audience: 'garden-api'
+                }
+            });
+            console.log("Created token")
+            const res = await fetch("http://localhost:3000/api/ai/user", {
+                method: "POST",
+                headers: {
+                    "Content-Type": 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    prompt: "What plants do I have growing right now?"
+                })
+            })
+            if (!res.ok) {
+                throw new Error("Response error")
+            }
+            const data = await res.text()
+            console.log(data)
+        } catch (err) {
+            console.error("Error catch executed.")
+            console.error(err)
+        }
+    }
+
     onMounted(async () => {
     })
 
@@ -160,6 +189,7 @@
         <button @click="createPlant">Create Plant</button>
         <button @click="getPlant">Get Plants</button>
         <button @click="chatbot">chatbot (click create user first)</button>
+        <button @click="promptExa">Prompt</button>
     </div>
 
 </template>
