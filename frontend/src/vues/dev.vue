@@ -51,6 +51,36 @@
         }
     }
 
+    const chatbot = async () => {
+        try {
+            const token = await getAccessTokenSilently({
+                authorizationParams: {
+                    audience: 'garden-api'
+                }
+            })
+            console.log("Created token")
+            const res = await fetch("http://localhost:3000/api/ai/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    query: "What plants should i grow to eat?"
+                })
+            })
+            if (!res.ok) {
+                throw new Error("Reponse error")
+            }
+            const data = await res.text()
+            console.log(data)
+
+        } catch (err) {
+            console.error("Error catch executed.")
+            console.error(err)
+        }
+    }
+
     onMounted(async () => {
     })
 
@@ -71,6 +101,7 @@
     <div v-else>
         <p>You are logged in.</p>
         <button @click="createUser">Create User</button>
+        <button @click="chatbot">chatbot (click create user first)</button>
     </div>
 
 </template>

@@ -167,30 +167,23 @@ app.post('/api/plants', checkJWT, (req, res) => {
 
 /*
  * Return a chatbot response to a query from the frontend
+ * links within the response are sent in markdown eg [google](google.com)
 */ 
 
-app.get('/api/ai/:query', checkJWT, async (req, res) => {
+app.post('/api/ai', checkJWT, async (req, res) => {
   	const stmt = db.prepare('SELECT zipcode, zone_code FROM users WHERE sub = ?');
+	const { query } = req.body
 
-	stmt.get(req.user.email, async (err, row) => {
+	stmt.get(req.auth.payload.sub, async (err, row) => {
 		if (err) return res.status(400).json({ error: err.message });
 
 		let zone = row.zone_code
 		let zipcode = row.zipcode
 		let context = `Context: user in the US lives in a zone with a hardinesslevel=${zone} and zipcode=${zipcode}.`
 
-		const response = await exa.answer(`${context}${req.params.query}`);
-		console.log(response)
-
-		res.status(200)
+		const response = await exa.answer(`${context}${query}`)
+		res.send(response.answer)
 	})
-
-	// todo 
-
-    res.json({
-        message: "User verified success!",
-        user: req.auth.payload.sub
-    })
 })
 
 
