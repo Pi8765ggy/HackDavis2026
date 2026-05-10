@@ -104,6 +104,8 @@ function getCityState(zipcode) {
 	return {
 		city: titlecase(data.city),
 		state: data.state,
+		longitude: data.longitude,
+		latitude: data.latitude,
 	}
 }
 
@@ -212,6 +214,28 @@ app.post('/api/plants', checkJWT, (req, res) => {
   	});
 
   	stmt.finalize();
+})
+
+// returns array of {count, latitude, longitude, name}
+app.get('/api/plantmap', async (req, res) => {
+	const stmt = db.prepare(`SELECT u.zipcode, COUNT(p.id) AS plant_count
+		FROM plants p
+		JOIN users u ON p.owner = u.sub
+		GROUP BY u.zipcode`)
+	
+	stmt.all(async (err, rows) => {
+		if (err) return res.status(400).json({ error: err.message });
+	
+		res.send(rows.map(r => {
+			const data = getCityState(r.zipcode)
+			return {
+				longitude: data.longitude, 
+				latitude: data.latitude,
+				city: data.city,
+				...r
+			}
+		}))
+	})
 })
 
 /*
