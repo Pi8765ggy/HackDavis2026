@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "dotenv": "^17.4.2",
+    "exa-js": "^2.12.1",
     "express": "^5.2.1",
     "express-oauth2-jwt-bearer": "^1.8.0",
     "fs": "^0.0.1-security",

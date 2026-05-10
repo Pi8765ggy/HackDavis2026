@@ -1,5 +1,5 @@
 const express = require('express');
-
+const { Exa } = require("exa-js");
 
 
 /*
@@ -32,7 +32,10 @@ const checkJWT = auth({
     tokenSigningAlg: 'RS256'
 })
 
-
+/*
+ * exa.ai agent chatbot clanker
+ */
+const exa = new Exa();
 
 /*
  * User Routes
@@ -51,12 +54,14 @@ app.post('/user', (req, res) => {
 	stmt.finalize();
 });
 
-app.put('/users/:email/zipcode', (req, res) => {
-	const { zipcode } = req.body;
+// updates zipcode and zone (based on zipcode)
+app.put('/users/:email/zipcode/:zipcode', (req, res) => {
+	const stmt = db.prepare('UPDATE users SET zipcode = ?, zone_code = ? WHERE email = ?');
 
-	const stmt = db.prepare('UPDATE users SET zipcode = ? WHERE email = ?');
+	const zipcode = req.params.zipcode
+	const zone = zipcodeToZoneData(zipcode).zone;
 
-	stmt.run(zipcode, req.params.email, function (err) {
+	stmt.run(zipcode, zone, req.params.email, function (err) {
 		if (err) return res.status(400).json({ error: err.message });
 		if (this.changes === 0) return res.status(404).json({ error: 'User not found' });
 
@@ -114,30 +119,56 @@ app.get('/', (req, res) => {
 
 // Return zone information based on a provided zipcode
 const zone = require(path.join(__dirname, 'static', 'zoneinfo', 'zipcode_zone.json'));
-app.get('/api/zip/:zipcode', (req, res) => {
-    const zipcode = req.params.zipcode;
+
+// Returns data related to the specific zip code in this format:
+/*
+ * zone: A string that gives the hardiness zone of the zipcode. (ex: "7a")
+ * trange: A string that give the temperature range of the zone in degrees F. (ex: "0 to 5")
+ * zonetitle: String that combines the previous two fields. (ex: "7a: 0 to 5")
+ */
+function zipcodeToZoneData(zipcode) {
     const data = zone[zipcode];
 
     if (!data) {
-        return res.status(404).json({
+        throw {
             error: "ZIP code not found.",
             zip: zipcode
-        })
+        }
     };
-    
-    // Returns data related to the specific zip code in this format:
-    /*
-     * zone: A string that gives the hardiness zone of the zipcode. (ex: "7a")
-     * trange: A string that give the temperature range of the zone in degrees F. (ex: "0 to 5")
-     * zonetitle: String that combines the previous two fields. (ex: "7a: 0 to 5")
-     */
-    res.json(data);
+
+	return data
+}
+
+app.get('/api/zip/:zipcode', (req, res) => {
+	try {
+		const zipcode = req.params.zipcode;
+		res.json(zipcodeToZoneData(zipcode));
+	} catch (e) {
+        return res.status(404).json(e)
+	}
 });
 
+
 // Return a chatbot response to a query from the frontend
-app.get('/api/ai', checkJWT, (req, res) => {
-    console.log("This code ran!")
-    console.log(req.auth.payload)
+
+app.get('/api/ai/:query', checkJWT, async (req, res) => {
+  	const stmt = db.prepare('SELECT zipcode, zone_code FROM users WHERE sub = ?');
+
+	stmt.get(req.user.email, (err, row) => {
+		if (err) return res.status(400).json({ error: err.message });
+
+		let zone = row.zone_code
+		let zipcode = row.zipcode
+		let context = `Context: user in the US lives in a zone with a hardinesslevel=${} and zipcode=${zipcode}.`
+
+		const response = await exa.answer(`${context}${req.params.query}`);
+		console.log(response)
+
+		res.status(200)
+	})
+
+	// todo 
+
     res.json({
         message: "User verified success!",
         user: req.auth.payload.sub
@@ -149,3 +180,15 @@ app.get('/api/ai', checkJWT, (req, res) => {
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 });
+
+/*
+// zone string like 7a (always contains letter at the end, see json file)
+function plantCanGrowInZone(plant, zone) {
+	let z = zone.substring(0, zone.length-1);
+	return z >= plant.zoneMin && z <= plant.zoneMax
+}
+
+app.get('/hi', (req, res) => {
+	res.send(parseRangeString("-5 to 0"))
+})
+*/
