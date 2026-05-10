@@ -40,9 +40,25 @@ const checkJWT = auth({
 /*
  * exa.ai agent chatbot clanker
  */
-const exa = new Exa();
+const exa = new Exa(process.env.EXA_API_KEY);
 
-
+/*
+ * Database helper function for db access
+ */
+const dbAll = (sql, params = []) =>
+    new Promise((resolve, reject) => {
+        db.all(sql, params, (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows);
+    });
+});
+const dbGet = (sql, params = []) =>
+    new Promise((resolve, reject) => {
+        db.get(sql, params, (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+        })
+    })
 
 /////////////////////////
 //
@@ -153,6 +169,7 @@ app.get('/api/plants', checkJWT, (req, res) => {
 
 app.post('/api/plants', checkJWT, (req, res) => {
 	const { name, date_planted } = req.body;
+    const owner = req.auth.payload.sub
 
 	const stmt = db.prepare('INSERT INTO plants (owner, name, date_planted) VALUES (?, ?, ?)');
 
@@ -169,7 +186,6 @@ app.post('/api/plants', checkJWT, (req, res) => {
  * Return a chatbot response to a query from the frontend
  * links within the response are sent in markdown eg [google](google.com)
 */ 
-
 app.post('/api/ai', checkJWT, async (req, res) => {
   	const stmt = db.prepare('SELECT zipcode, zone_code FROM users WHERE sub = ?');
 	const { query } = req.body
@@ -186,12 +202,71 @@ app.post('/api/ai', checkJWT, async (req, res) => {
 	})
 })
 
+/*
+ * Returns a chatbot's response to a user submitted prompt.
+ * The context is provided using the database.
+ */
+app.post('/api/ai/user', checkJWT, async (req, res) => {
+
+    const { prompt } = req.body
+
+    try {
+
+        const rows = await dbAll(
+            'SELECT name, date_planted FROM plants WHERE owner = ?',
+            [req.auth.payload.sub]
+        );
+        
+        // Format: YYYY-MM-DD
+        const date = new Date().toISOString().split('T')[0];
+        let plants;
+        if (rows.length == 0) {
+            plants = "The user has no plants."
+        } else {
+            const plantList = rows
+            .map((row, i) => `${i + 1}. ${row.name}, planted on ${row.date_planted}`)
+            .join('\n');
+            plants = `The user has ${rows.length} plant${rows.length === 1 ? '' : 's'}:\n${plantList}`;
+        }
+        const user = await dbGet(
+            'SELECT * FROM users WHERE sub = ?',
+            [req.auth.payload.sub]
+        );
+
+        const context = `You are a helpful AI model who wants to provide users with information regarding gardening. \
+        You will be polite and concise with your answers, striving to provide the most accurate information. \
+        You should not take more than three sentences to answer a user's question, unless it is extremely nuanced. \
+        Avoid citing sources directly in text, a citation list will be provided from your response elsewhere. \
+        Try to talk in plain English, without using overly technical terms. \
+        You will absolutely never provide any inforation that you deem to be dangerous or risky for the user. \
+        The user lives in the zone ${user.zone}. You should base your response around the zone of the user. \
+        The current date is ${date}. You should base your response around the current time of the year. \
+        ${plants} \n\
+        The user has submitted the following prompt, answer to the best of your ability. \n\
+        \"${prompt}\"`;
+
+        const result = await exa.answer(context, {
+            text: true
+        });
+
+        return res.status(200).json({
+            answer: result.answer,
+            citations: result.citations
+        });
+
+    } catch (err) {
+        return res.status(500).json({ message: err.message })
+    }
+})
 
 /*
  * Serve static index.html file.
  * Located at HackDavis2026/garden/static/build/index.html
  */
 app.get(/.*/, (req, res) => {
+    res.sendFile(path.join(__dirname, 'static', 'build', 'index.html'));
+});
+app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'static', 'build', 'index.html'));
 });
 
