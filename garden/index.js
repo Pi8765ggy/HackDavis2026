@@ -119,19 +119,25 @@ app.post('/api/user', checkJWT, (req, res) => {
 });
 
 // also updates zone code (based on zipcode)
-app.put('/api/users', checkJWT, (req, res) => {
+app.put('/api/user/update', checkJWT, (req, res) => {
+    if (!req.body) {
+        return res.status(400).json({ error: "Empty request body. "})
+    }
 	const { zipcode } = req.body;
-	const zone = getZone(zipcode).zone;
+	const data = getZone(zipcode);
+
+    if (!data) {
+        return res.status(404).json({ error: "Zip code not found." })
+    }
+    const zone_code = data["zone"]
 
 	const stmt = db.prepare('UPDATE users SET zipcode = ?, zone_code = ? WHERE sub = ?');
 
-	stmt.run(zipcode, zone, req.auth.payload.sub, function (err) {
+	stmt.run(zipcode, zone_code, req.auth.payload.sub, (err) => {
 		if (err) return res.status(400).json({ error: err.message });
 		if (this.changes === 0) return res.status(404).json({ error: 'User not found' });
-
-		res.json({ message: 'Zipcode updated' });
+		return res.status(200).json({ message: 'Zipcode updated' });
 	});
-
 	stmt.finalize();
 });
 
@@ -141,27 +147,35 @@ app.put('/api/users', checkJWT, (req, res) => {
  * Garden Routes
  */
 app.get('/api/plants', checkJWT, (req, res) => {
+    owner = req.auth.payload.sub
 	const stmt = db.prepare('SELECT name, date_planted FROM plants WHERE owner = ?');
-	stmt.all(req.auth.payload.sub, (err, rows) => {
+	stmt.all(owner, (err, rows) => {
 		if (err) return res.status(400).json({ error: err.message });
 
 		const json = JSON.stringify(rows);
-  		res.send(json)
+  		return res.status(200).send(json)
 	});
 	stmt.finalize();
 })
 
 app.post('/api/plants', checkJWT, (req, res) => {
-	const { name, date_planted } = req.body;
+    
+    if (!req.body) {
+        return res.status(400).json({ error: "Empty request body. "})
+    }
 
+    owner = req.auth.payload.sub
+
+	const { name, date_planted } = req.body;
 	const stmt = db.prepare('INSERT INTO plants (owner, name, date_planted) VALUES (?, ?, ?)');
 
 	stmt.run(owner, name, date_planted, function (err) {
-		if (err) return res.status(400).json({ error: err.message });
-
-		res.status(201)
+		if (err) {
+            return res.status(400).json({ error: err.message })
+        } else {
+            return res.status(201).json({ message: "Created plant success."})
+        }
   	});
-
   	stmt.finalize();
 })
 

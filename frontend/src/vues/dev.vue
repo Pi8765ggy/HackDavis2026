@@ -35,6 +35,7 @@
                     Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({
+                    // Currently using a static zipcode. TODO: Read from user input
                     zipcode: "95616"
                 })
             })
@@ -45,6 +46,60 @@
 
             console.log(data)
 
+        } catch (err) {
+            console.error("Error catch executed.")
+            console.error(err)
+        }
+    }
+    const createPlant = async () => {
+        try {
+            const token = await getAccessTokenSilently({
+                authorizationParams: {
+                    audience: 'garden-api'
+                }
+            })
+            console.log("Created token")
+            const res = await fetch("http://localhost:3000/api/plants", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    name: "planty mcplantface",
+                    date_planted: "today!"
+                })
+            })
+            if (!res.ok) {
+                throw new Error("Response error")
+            }
+            const data = await res.json()
+            console.log(data)
+        } catch (err) {
+            console.error("Error catch executed.")
+            console.error(err)
+        }
+    }
+    const getPlant = async () => {
+        try {
+            const token = await getAccessTokenSilently({
+                authorizationParams: {
+                    audience: 'garden-api'
+                }
+            })
+            console.log("Created token")
+            const res = await fetch("http://localhost:3000/api/plants", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                }
+            })
+            if (!res.ok) {
+                throw new Error("Response error")
+            }
+            const data = await res.json()
+            console.log(data)
         } catch (err) {
             console.error("Error catch executed.")
             console.error(err)
@@ -70,7 +125,10 @@
 
     <div v-else>
         <p>You are logged in.</p>
+        <button @click="logout">Logout</button>
         <button @click="createUser">Create User</button>
+        <button @click="createPlant">Create Plant</button>
+        <button @click="getPlant">Get Plants</button>
     </div>
 
 </template>
