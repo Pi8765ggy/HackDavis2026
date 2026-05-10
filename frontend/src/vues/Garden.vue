@@ -124,8 +124,6 @@
 
     }
 
-    
-
     #list {
         flex: 3;
         display: grid;
