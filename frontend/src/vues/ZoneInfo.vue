@@ -1,11 +1,12 @@
 <script setup>
     import { useAuth0 } from '@auth0/auth0-vue'
-    import { ref, onMounted } from 'vue'
+    import { ref, onMounted, watch } from 'vue'
     import { useRouter } from 'vue-router'
 
     const router = useRouter()
 
     const {
+        isAuthenticated,
         getAccessTokenSilently,
         error,
         loginWithRedirect,
@@ -18,7 +19,13 @@
     const plantList = ref([])
     const zone = ref("")
 
-    const loading = ref(false)
+    const loading = ref(false);
+
+    const login = () => loginWithRedirect({
+        authorizationParams: {
+            audience: "garden-api"
+        }
+    })
 
     const ResetZip = () => {
         showResult.value = false
@@ -89,12 +96,23 @@
             loading.value = false
         }
     }
+
+    watch(user, (u) => {
+        console.log("User:", u)
+        console.log("Picture URL:", u?.picture)
+    }, { immediate: true })
 </script>
 
 <template>
     <header>
-        <img src="../images/logo-full.svg" alt="gardinspiration logo" id="logo">
-        <img src="../images/user-icon.svg" alt="user icon" id="user">
+        <RouterLink to='/'>
+            <img src="../images/logo-full.svg" alt="gardinspiration logo" id="logo">
+        </RouterLink>
+        <div v-if="isAuthenticated" id="user"  >
+            <p>Welcome back, {{ user.name }}!</p>
+            <img :src="user.picture" alt="user icon" referrerpolicy="no-referrer">
+        </div>
+        <button v-else @click="login" id="user">Login</button>
     </header>
 
 	<img src="../images/pinkflower.png" class="loading-spinner" v-if="loading"/>

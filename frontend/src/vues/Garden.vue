@@ -113,8 +113,13 @@
 
 <template>
     <header>
-        <img src="../images/logo-full.svg" alt="gardinspiration logo" id="logo">
-        <img src="../images/user-icon.svg" alt="user icon" id="user">
+        <RouterLink to='/'>
+            <img src="../images/logo-full.svg" alt="gardinspiration logo" id="logo">
+        </RouterLink>
+        <div id="user">
+            <p>Welcome back, {{ user.name }}!</p>
+            <img :src="user.picture" alt="user icon" referrerpolicy="no-referrer">
+        </div>
     </header>
 
     <div id="container">

@@ -13,7 +13,9 @@ app.use(
         cacheLocation: "localstorage",
         useRefreshTokens: true,
         authorizationParams: {
-            redirect_uri: window.location.origin
+            redirect_uri: window.location.origin,
+            audience: 'garden-api',
+            scope: 'openid profile email'
         }
     })
 )
