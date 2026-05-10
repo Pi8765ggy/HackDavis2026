@@ -44,11 +44,6 @@
 
         try {
             loading.value = true
-            const token = await getAccessTokenSilently({
-                authorizationParams: {
-                    audience: 'garden-api'
-                }
-            });
             console.log("Created token")
 
             const inZip = inputZip.value
@@ -56,11 +51,7 @@
             console.log("Start AI Resp fetch")
             console.log(inZip)
             let res = await fetch(`http://localhost:3000/api/ai/plants/${encodeURIComponent(inZip)}`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": 'application/json',
-                    Authorization: `Bearer ${token}`
-                }
+                method: "GET"
             })
             if (!res.ok) {
                 throw new Error("Response error")
@@ -72,11 +63,7 @@
             
             console.log("Start zone fetch")
             res = await fetch(`http://localhost:3000/api/zip/${encodeURIComponent(inZip)}`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": 'application/json',
-                    Authorization: `Bearer ${token}`
-                }
+                method: "GET"
             })
             if (!res.ok) {
                 throw new Error("Reponse error")
@@ -96,11 +83,6 @@
             loading.value = false
         }
     }
-
-    watch(user, (u) => {
-        console.log("User:", u)
-        console.log("Picture URL:", u?.picture)
-    }, { immediate: true })
 </script>
 
 <template>

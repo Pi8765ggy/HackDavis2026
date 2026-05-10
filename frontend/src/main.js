@@ -12,10 +12,11 @@ app.use(
         clientId: import.meta.env.VITE_AUTH0_CLIENT_ID,
         cacheLocation: "localstorage",
         useRefreshTokens: true,
+        useRefreshTokensFallback: true,
         authorizationParams: {
             redirect_uri: window.location.origin,
             audience: 'garden-api',
-            scope: 'openid profile email'
+            scope: 'openid profile email offline_access'
         }
     })
 )
