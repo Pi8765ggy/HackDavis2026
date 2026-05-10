@@ -169,8 +169,68 @@
         router.push('/chat')
     }
 
+    const DBuserZIP = ref("")
+    const GetUserZip = async () => {
+        try {
+            const token = await getAccessTokenSilently({
+                authorizationParams: {
+                    audience: 'garden-api'
+                }
+            });
+            console.log("Token created.")
+            const res = await fetch("http://localhost:3000/api/me", {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+            if (!res.ok) {
+                throw new Error(res.error)
+            }
+            const data = await res.json()
+            console.log(data)
+            DBuserZIP.value = data.zipcode
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+    const inputUserZIP = ref("")
+    const updating = ref(false)
+    const updateUserZip = async () => {
+        if (updating.value) {
+            return
+        }
+        updating.value = true
+        try {
+            const token = await getAccessTokenSilently({
+                authorizationParams: {
+                    audience: 'garden-api'
+                }
+            });
+            console.log("Token created.")
+            const res = await fetch(`http://localhost:3000/api/users/${inputUserZIP.value}`, {
+                method: "PUT",
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+            if (!res.ok) {
+                throw new Error(res.error)
+            }
+            const data = await res.json()
+            console.log(data.message)
+        } catch (err) {
+            console.error(err)
+        } finally {
+            updating.value = false
+        }
+        await GetUserZip();
+    }
+
     onMounted(async () => {
         await refreshPlants();
+        await GetUserZip();
     })
 </script>
 
@@ -181,18 +241,22 @@
         </RouterLink>
         <div id="user">
             <p>Welcome back, {{ user.name }}!</p>
-            <img :src="user.picture" alt="user icon" referrerpolicy="no-referrer">
+            <RouterLink to='/garden'>
+                <img :src="user.picture" alt="user icon" referrerpolicy="no-referrer">
+            </RouterLink>
         </div>
     </header>
 
     <div id="container">
         <section id="menu">
             <h1>Your Garden</h1>
+            <h3>Your ZIP: {{ DBuserZIP }}</h3>
 
             <div id="btn" v-if="activeView === 'default'">
                 <button @click="activeView = 'add'">Add plant</button>
                 <button @click="activeView = 'select'">Edit garden</button>
                 <button @click="routeChatBot">Ask our chatbot</button>
+                <button @click="activeView = 'user'">Change your ZIP</button>
             </div>
 
             <div id="plantForm" v-else-if="activeView === 'add'">
@@ -216,7 +280,7 @@
                     <input v-model="plant_id" type="text" id="pid" required>
                     <button type="submit">Remove</button>
                 </form>
-                <button @click="activeView = 'default'">Cancel</button>
+                <button @click="activeView = 'default'">Back</button>
             </div>
 
             <div id="plantForm" v-else-if="activeView === 'edit'">
@@ -239,7 +303,19 @@
             <div id="plantForm" v-else-if="activeView === 'select'">
                 <button @click="activeView = 'edit'">Edit a Plant</button>
                 <button @click="activeView = 'remove'">Remove a Plant</button>
-                <button @click="activeView = 'default'">Cancel</button>
+                <button @click="activeView = 'default'">Back</button>
+            </div>
+
+            <div id="plantForm" v-else-if="activeView === 'user'">
+                <h2>Update your ZIP Code</h2>
+                <h3>Currently: {{ DBuserZIP }}</h3>
+                <form @submit.prevent="updateUserZip">
+                    <label for="newzip">New ZIP Code:</label>
+                    <input v-model="inputUserZIP" type="text" id="pid" required>
+
+                    <button type="submit">Change</button>
+                </form>
+                <button @click="activeView = 'default'">Back</button>
             </div>
         </section>
 

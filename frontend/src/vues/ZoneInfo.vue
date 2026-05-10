@@ -92,11 +92,13 @@
         </RouterLink>
         <div v-if="isAuthenticated" id="user"  >
             <p>Welcome back, {{ user.name }}!</p>
-            <img :src="user.picture" alt="user icon" referrerpolicy="no-referrer">
+            <RouterLink to='/garden'>
+                <img :src="user.picture" alt="user icon" referrerpolicy="no-referrer">
+            </RouterLink>
         </div>
         <button v-else @click="login" id="user">Login</button>
     </header>
-
+    
 	<img src="../images/pinkflower.png" class="loading-spinner" v-if="loading"/>
 
     <!-- toggle the class "invis" switch display -->

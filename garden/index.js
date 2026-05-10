@@ -180,14 +180,13 @@ app.post('/api/user', checkJWT, async (req, res) => {
 });
 
 // Updates zipcode and zone code for user based on input
-app.put('/api/users', checkJWT, ensureUser, (req, res) => {
-    if (!req.body) {
-        return res.status(400).json({ error: "Empty request body. "});
-    }
-	const { zipcode } = req.body;
+app.put('/api/users/:zipcode', checkJWT, ensureUser, (req, res) => {
+	const zipcode = req.params.zipcode;
 	const zone = getZone(zipcode).zone;
 
     if (!zone) {
+        console.log("INVALID ZIP CODE")
+        console.log("ZIP: ", zipcode)
         return res.status(404).json({ error: "Invalid zipcode provided. "})
     }
 
@@ -195,7 +194,6 @@ app.put('/api/users', checkJWT, ensureUser, (req, res) => {
 
 	stmt.run(zipcode, zone, req.auth.payload.sub, function (err) {
 		if (err) return res.status(400).json({ error: err.message });
-		if (this.changes === 0) return res.status(404).json({ error: 'User not found' });
 
 		return res.status(200).json({ message: 'Zipcode updated' });
 	});

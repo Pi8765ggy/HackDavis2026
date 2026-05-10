@@ -65,7 +65,9 @@
         </RouterLink>
         <div id="user">
             <p>Welcome back, {{ user.name }}!</p>
-            <img :src="user.picture" alt="user icon" referrerpolicy="no-referrer">
+            <RouterLink to='/garden'>
+                <img :src="user.picture" alt="user icon" referrerpolicy="no-referrer">
+            </RouterLink>
         </div>
     </header>
 
