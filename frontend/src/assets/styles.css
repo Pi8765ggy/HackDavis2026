@@ -1,0 +1,31 @@
+/* shared styles */
+
+body {
+    background-color: #58554A;
+    color: #FFF9E3;
+    font-family: "Fira Sans", sans-serif;
+}
+
+template {
+    max-width: 1600px;
+    margin: auto;
+}
+
+header {
+    display: flex;
+    align-items: center;
+    border-bottom: #9FE459 5px solid;
+    height: 120px;
+    padding: 0  15px;
+}
+
+#user {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+#logo {
+    width:250px;
+    height: auto;
+}
+
