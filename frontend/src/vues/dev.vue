@@ -35,8 +35,7 @@
                     Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    zipcode: "95616",
-                    zone_code: "7a"
+                    zipcode: "95616"
                 })
             })
             if (!res.ok) {
