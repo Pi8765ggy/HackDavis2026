@@ -87,6 +87,26 @@ function getZone(zipcode) {
     }
 }
 
+const zonecities = require(path.join(__dirname, 'static', 'zoneinfo', 'zipcode_city.json'));
+
+function titlecase(str) {
+	return str.split(' ')
+		.map(s => s.substring(0,1)+s.substring(1).toLowerCase())
+		.reduce((acc, cur) => `${acc} ${cur}`, '').trim()
+}
+
+function getCityState(zipcode) {
+	const z = zipcode.toString().padStart(5, "0");
+	const data = zonecities[z]
+	if (!data) {
+		return null
+	}
+	return {
+		city: titlecase(data.city),
+		state: data.state,
+	}
+}
+
 app.get('/api/zip/:zipcode', (req, res) => {
     const zipcode = req.params.zipcode;
     
@@ -107,6 +127,18 @@ app.get('/api/zip/:zipcode', (req, res) => {
 /*
  * User Routes
  */
+
+app.get('/api/me', checkJWT, (req, res) => {
+    const sub = req.auth.payload.sub;
+  	const stmt = db.prepare('SELECT zipcode, zone_code FROM users WHERE sub = ?');
+	stmt.get(sub, (err, row) => {
+		if (err) {
+			return res.status(400).json({ error: err.messaage });
+		}
+		return res.send({...row, ...getCityState(row.zipcode)})
+	})
+})
+
 // Creates a user, defaults location to Davis CA
 app.post('/api/user', checkJWT, (req, res) => {
     const sub = req.auth.payload.sub;
@@ -119,7 +151,7 @@ app.post('/api/user', checkJWT, (req, res) => {
 
 	stmt.run(sub, zipcode, zone_code, (err) => {
 		if (err) {
-            return res.status(200).json({ error: err.messaage });
+            return res.status(400).json({ error: err.messaage });
         } else {
             return res.status(201).json({ message: "Created User" })
         }
