@@ -19,6 +19,9 @@
     const plantList = ref([])
     const zone = ref("")
 
+    const city = ref("")
+    const state = ref("")
+
     const loading = ref(false);
 
     const login = () => loginWithRedirect({
@@ -74,8 +77,10 @@
             zone.value = data.zone
             console.log(zone.value)
 
-            showResult.value = true
+			city.value = data.city
+			state.value = data.state
 
+            showResult.value = true
         } catch (err) {
             console.error("Error catch executed.")
             console.error(err)
@@ -169,7 +174,10 @@
         </section>
 
         <section id="showPlants">
-            <h3>Here are some plants we recommend for your location</h3>
+            <h3>Here are some plants we recommend for your location<span>, 
+				{{city}}, {{state}}
+			</span>
+			</h3>
             <article v-for="plant in plantList">
                  <img v-if="plant.imagetype === 'flower'" src="../images/flowerplaceholder.jpg" alt="flower">
                  <img v-else src="../images/carrot.jpg" alt="vegetable">
