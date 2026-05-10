@@ -264,6 +264,7 @@ app.post('/api/ai/user', checkJWT, async (req, res) => {
  * Located at HackDavis2026/garden/static/build/index.html
  */
 app.get(/.*/, (req, res) => {
+    console.log(path.join(__dirname, 'static', 'build', 'index.html'));
     res.sendFile(path.join(__dirname, 'static', 'build', 'index.html'));
 });
 app.use((req, res) => {
