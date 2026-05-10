@@ -171,6 +171,10 @@
 </script>
 
 <template>
+    <header>
+        <img src="../images/logo-full.svg" alt="gardinspiration logo" id="logo">
+        <img src="../images/user-icon.svg" alt="user icon" id="user">
+    </header>
 
     <h1>Dev Page</h1>
 
