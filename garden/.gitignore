@@ -1,5 +1,5 @@
 node_modules
 .env
 *.log
-*.sql
+db.sql
 static/build
