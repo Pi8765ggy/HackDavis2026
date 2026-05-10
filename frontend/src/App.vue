@@ -1,49 +1,61 @@
 <script setup lang="ts">
   import { useAuth0 } from '@auth0/auth0-vue'
+
   import { ref } from 'vue'
 
   const userID = ref("default")
-
   const {
     isLoading,
     isAuthenticated,
+    getAccessTokenSilently,
     error,
     loginWithRedirect,
     logout: auth0Logout,
     user
   } = useAuth0()
+  const signup = () => loginWithRedirect({ authorizationParams: { screen_hint: 'signup', audience: "garden-api" } })
+
+  const login = () => loginWithRedirect({
+        authorizationParams: {
+            audience: "garden-api"
+        }
+  })
   
-  const signup = () =>
-    loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })
-  
-  const login = () => loginWithRedirect()
-  
-  const logout = () =>
-    auth0Logout({ logoutParams: { returnTo: window.location.origin } })
-    
-  const token = await getAccessTokenSilently()
+  const logout = () => auth0Logout({ logoutParams: { returnTo: window.location.origin } })
+
 
   const test = async () => {
     try{
+        let token = null
+        if (isAuthenticated.value && !isLoading.value) {
+            console.log("attempting token get")
+            token = await getAccessTokenSilently({
+                authorizationParams: {
+                    audience: 'garden-api'
+                }
+            })
+            console.log("token got!")
+        }
+
         const res = await fetch("http://localhost:3000/api/ai", {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         })
-    
+
         if (!res.ok) {
             userID.value = "Bad!"
-            throw new Error("Login auth fail")
+            throw new Error(token)
         }
 
         const data = await res.json()
 
         userID.value = data.user
     } catch (err) {
-        throw new err
+        console.error("Error catch executed.")
+        console.error("Erorr: ", err)
     }
   }
-
 </script>
 
 <template>
@@ -66,7 +78,9 @@
 
     <button @click="logout">Logout</button>
     <button @click="test">BIG RED BUTTON</button>
-    <p>{{ userID.value }}</p>
+
+    <h1>{{ userID.value }}</h1>
+
   </div>
 
   <div v-else>
@@ -77,4 +91,5 @@
     <button @click="login">Login</button>
   </div>
 </template>
+
 <style scoped></style>

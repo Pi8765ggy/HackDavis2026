@@ -8,8 +8,7 @@ const express = require('express');
 const app = express();
 const port = 3000;
 const path = require('path');
-
-
+app.use(express.static(path.join(__dirname, 'static', 'build')));
 
 /*
  * Load environment variables
@@ -23,15 +22,14 @@ const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('db.sql');
 
 /*
-<<<<<<< HEAD
  * Import auth0 middleware
  */
 const { auth } = require("express-oauth2-jwt-bearer");
-const auth0Domain = process.env.VITE_AUTH0_DOMAIN;
-const auth0ID = process.env.VITE_AUTH0_CLIENT_ID;
+const auth0Domain = process.env.AUTH0_DOMAIN;
 const checkJWT = auth({
-    audience: auth0ID,
-    issuerBaseURL: auth0Domain
+    audience: 'garden-api',
+    issuerBaseURL: auth0Domain,
+    tokenSigningAlg: 'RS256'
 })
 
 
@@ -102,10 +100,10 @@ app.post('/plants/:email', (req, res) => {
 
 /*
  * Serve static index.html file.
- * Located at HackDavis2026/garden/static/index.html
+ * Located at HackDavis2026/garden/static/build/index.html
  */
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'static', 'index.html'));
+    res.sendFile(path.join(__dirname, 'static', 'build', 'index.html'));
 });
 
 
@@ -138,6 +136,8 @@ app.get('/api/zip/:zipcode', (req, res) => {
 
 // Return a chatbot response to a query from the frontend
 app.get('/api/ai', checkJWT, (req, res) => {
+    console.log("This code ran!")
+    console.log(req.auth.payload)
     res.json({
         message: "User verified success!",
         user: req.auth.payload.sub
