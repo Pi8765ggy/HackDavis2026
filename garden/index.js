@@ -252,6 +252,7 @@ app.delete('/api/plants/:id', checkJWT, ensureUser, (req, res) => {
         return res.status(204).end()
     });
     stmt.finalize();
+});
 
 // returns array of {count, latitude, longitude, name}
 app.get('/api/plantmap', async (req, res) => {
