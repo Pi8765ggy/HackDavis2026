@@ -36,7 +36,6 @@
     const addingPlant = ref(false)
     const addPlant = async () => {
         if (addingPlant.value) {
-            console.log("Adding plant, rejected.")
             return
         }
 
@@ -158,8 +157,6 @@
             }
             const data = await res.json()
             plantList.value = data
-            console.log("Plants refreshed:")
-            console.log(data)
         } catch (err) {
             console.error(err)
         }
@@ -188,7 +185,6 @@
                 throw new Error(res.error)
             }
             const data = await res.json()
-            console.log(data)
             DBuserZIP.value = data.zipcode
         } catch (err) {
             console.error(err)
@@ -219,7 +215,6 @@
                 throw new Error(res.error)
             }
             const data = await res.json()
-            console.log(data.message)
         } catch (err) {
             console.error(err)
         } finally {

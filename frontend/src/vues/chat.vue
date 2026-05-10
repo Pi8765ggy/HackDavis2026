@@ -30,7 +30,6 @@
             });
             console.log("Token created.")
             notLiveprompt.value = livePrompt.value
-            console.log(token)
             const res = await fetch("http://localhost:3000/api/ai/user", {
                 method: "POST",
                 headers: {
@@ -45,7 +44,6 @@
                 throw new Error(res.error)
             }
             const data = await res.json()
-            console.log(data)
 
             response.value = data.answer
 

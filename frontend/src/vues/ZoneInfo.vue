@@ -51,7 +51,6 @@
 
             const inZip = inputZip.value
 
-            console.log("Start AI Resp fetch")
             console.log(inZip)
             let res = await fetch(`http://localhost:3000/api/ai/plants/${encodeURIComponent(inZip)}`, {
                 method: "GET"
@@ -60,11 +59,9 @@
                 throw new Error("Response error")
             }
             let data = await res.json()
-            console.log(data)
 
             plantList.value = data
             
-            console.log("Start zone fetch")
             res = await fetch(`http://localhost:3000/api/zip/${encodeURIComponent(inZip)}`, {
                 method: "GET"
             })
@@ -72,10 +69,8 @@
                 throw new Error("Reponse error")
             }
             data = await res.json()
-            console.log(data)
 
             zone.value = data.zone
-            console.log(zone.value)
 
 			city.value = data.city
 			state.value = data.state
